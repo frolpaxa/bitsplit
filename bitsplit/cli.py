@@ -1,9 +1,10 @@
 """Command-line interface for bitsplit."""
 
 import argparse
+import os
 import sys
 
-from .core import decode, encode
+from .core import decode_file, encode_file
 
 
 def main():
@@ -36,31 +37,13 @@ def main():
     args = parser.parse_args()
 
     if args.command == "encode":
-        with open(args.input, "rb") as f:
-            raw = f.read()
-
-        block, key_str = encode(raw)
-
-        with open(args.data, "wb") as f:
-            f.write(block)
-        with open(args.key, "w") as f:
-            f.write(key_str)
-
-        print(f"Block: {args.data} ({len(block)} bytes)")
+        block_size = encode_file(args.input, args.data, args.key)
+        print(f"Block: {args.data} ({block_size} bytes)")
         print(f"Key:   {args.key}")
 
     elif args.command == "decode":
-        with open(args.key, "r") as f:
-            key_str = f.read()
-        with open(args.data, "rb") as f:
-            block = f.read()
-
-        content = decode(block, key_str)
-
-        with open(args.output, "wb") as f:
-            f.write(content)
-
-        print(f"Restored: {args.output} ({len(content)} bytes)")
+        size = decode_file(args.data, args.key, args.output)
+        print(f"Restored: {args.output} ({size} bytes)")
 
 
 if __name__ == "__main__":
