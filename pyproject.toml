@@ -30,5 +30,8 @@ Homepage = "https://github.com/frolpaxa/bitsplit"
 Repository = "https://github.com/frolpaxa/bitsplit"
 Documentation = "https://bitsplit.readthedocs.io"
 
+[tool.setuptools.packages.find]
+include = ["bitsplit*"]
+
 [project.scripts]
 bitsplit = "bitsplit.cli:main"
