@@ -1,4 +1,4 @@
-"""BitSplit — split any file into a binary block and a 128-bit text key."""
+"""bitsplit — split any file into a binary block and a 128-bit text key."""
 
 __version__ = "0.1.0"
 

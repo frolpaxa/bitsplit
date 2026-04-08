@@ -2,7 +2,7 @@
 
 ## The idea
 
-Any file is a sequence of bytes. Any sequence of bytes is a number. BitSplit takes that number, slices off the top 128 bits as the **key**, and stores the rest as the **block**.
+Any file is a sequence of bytes. Any sequence of bytes is a number. bitsplit takes that number, slices off the top 128 bits as the **key**, and stores the rest as the **block**.
 
 ```
 File (bytes)  →  Number  →  [ key: 128 bits | block: the rest ]

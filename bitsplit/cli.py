@@ -1,4 +1,4 @@
-"""Command-line interface for BitSplit."""
+"""Command-line interface for bitsplit."""
 
 import argparse
 import sys
@@ -16,14 +16,22 @@ def main():
     # Encode
     enc = sub.add_parser("encode", help="Encode a file into block + key")
     enc.add_argument("input", help="Source file path")
-    enc.add_argument("-d", "--data", default="data.bin", help="Output block path (default: data.bin)")
-    enc.add_argument("-k", "--key", default="key.txt", help="Output key path (default: key.txt)")
+    enc.add_argument(
+        "-d", "--data", default="data.bin", help="Output block path (default: data.bin)"
+    )
+    enc.add_argument(
+        "-k", "--key", default="key.txt", help="Output key path (default: key.txt)"
+    )
 
     # Decode
     dec = sub.add_parser("decode", help="Decode a file from block + key")
     dec.add_argument("output", help="Restored file path")
-    dec.add_argument("-d", "--data", default="data.bin", help="Input block path (default: data.bin)")
-    dec.add_argument("-k", "--key", default="key.txt", help="Input key path (default: key.txt)")
+    dec.add_argument(
+        "-d", "--data", default="data.bin", help="Input block path (default: data.bin)"
+    )
+    dec.add_argument(
+        "-k", "--key", default="key.txt", help="Input key path (default: key.txt)"
+    )
 
     args = parser.parse_args()
 

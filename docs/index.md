@@ -1,4 +1,4 @@
-# BitSplit
+# bitsplit
 
 **Split any file into a keyless binary block and a 128-bit text key.**
 

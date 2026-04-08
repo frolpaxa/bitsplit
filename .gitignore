@@ -194,7 +194,7 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
-# BitSplit output
+# bitsplit output
 data.bin
 key.txt
 

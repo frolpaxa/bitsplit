@@ -1,4 +1,4 @@
-"""Tests for BitSplit encode/decode."""
+"""Tests for bitsplit encode/decode."""
 
 import os
 
@@ -21,7 +21,7 @@ def test_empty_like():
 
 
 def test_small_data():
-    data = b"Hello, BitSplit!"
+    data = b"Hello, bitsplit!"
     assert roundtrip(data) == data
 
 

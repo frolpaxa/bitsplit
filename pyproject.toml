@@ -26,8 +26,8 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/frolpaxa/BitSplit"
-Repository = "https://github.com/frolpaxa/BitSplit"
+Homepage = "https://github.com/frolpaxa/bitsplit"
+Repository = "https://github.com/frolpaxa/bitsplit"
 Documentation = "https://bitsplit.readthedocs.io"
 
 [project.scripts]
