@@ -1,6 +1,7 @@
 """Core encode/decode logic."""
 
 import os
+import secrets
 import shutil
 import sys
 
@@ -22,34 +23,18 @@ def encode(data: bytes) -> tuple[bytes, str]:
         data: Source file content as bytes.
 
     Returns:
-        (block, key) where block is bytes and key is "data:count:size" string.
+        (block, key) where block is bytes and key is "data:count:size:salt" string.
     """
     size = len(data)
 
     if size <= 16:
-        return _encode_small(data, size)
+        block, raw_key = _encode_small(data, size)
+    elif _first_nz(data, size) + _HEAD_LEN > size:
+        block, raw_key = _encode_bigint(data, size)
+    else:
+        block, raw_key = _encode_main(data, size)
 
-    # Find first non-zero byte
-    nz = 0
-    while nz < size and data[nz] == 0:
-        nz += 1
-
-    if nz + _HEAD_LEN > size:
-        # Very sparse data — fall back to big-int
-        return _encode_bigint(data, size)
-
-    head = data[nz : nz + _HEAD_LEN]
-    fb = head[0].bit_length()
-    head_int = int.from_bytes(head, "big")
-
-    total_bits = (size - nz - 1) * 8 + fb
-    count = total_bits - KEY_BITS
-
-    key_data = head_int >> fb
-    remainder = head_int & ((1 << fb) - 1)
-
-    block = bytes([remainder]) + data[nz + _HEAD_LEN :]
-    key = f"{key_data}:{count}:{size}"
+    key = _salt_key(raw_key)
     return block, key
 
 
@@ -58,15 +43,12 @@ def decode(block: bytes, key: str) -> bytes:
 
     Args:
         block: Binary block (indices).
-        key: Key string in "data:count:size" format.
+        key: Key string in "data:count:size:salt" or legacy "data:count:size" format.
 
     Returns:
         Restored file content as bytes.
     """
-    parts = key.split(":")
-    key_data = int(parts[0])
-    count = int(parts[1])
-    size = int(parts[2])
+    key_data, count, size = _parse_key(key)
 
     if size <= 16 or count == 0:
         return _decode_small(key_data, count, size, block)
@@ -110,9 +92,9 @@ def encode_file(input_path: str, block_path: str, key_path: str) -> int:
 
     if size <= 16:
         data = open(input_path, "rb").read()
-        block, key = _encode_small(data, size)
+        block, raw_key = _encode_small(data, size)
         _write(block_path, block)
-        _write_text(key_path, key)
+        _write_text(key_path, _salt_key(raw_key))
         return len(block)
 
     with open(input_path, "rb") as fin:
@@ -128,9 +110,9 @@ def encode_file(input_path: str, block_path: str, key_path: str) -> int:
             # Very sparse — fall back to in-memory
             fin.seek(0)
             data = fin.read()
-            block, key = _encode_bigint(data, size)
+            block, raw_key = _encode_bigint(data, size)
             _write(block_path, block)
-            _write_text(key_path, key)
+            _write_text(key_path, _salt_key(raw_key))
             return len(block)
 
         # Read head: the first non-zero byte (already read as `b`) + 16 more
@@ -153,8 +135,8 @@ def encode_file(input_path: str, block_path: str, key_path: str) -> int:
             shutil.copyfileobj(fin, fout, length=_CHUNK)
             block_size += size - nz - _HEAD_LEN
 
-    key = f"{key_data}:{count}:{size}"
-    _write_text(key_path, key)
+    raw_key = f"{key_data}:{count}:{size}"
+    _write_text(key_path, _salt_key(raw_key))
     return block_size
 
 
@@ -165,10 +147,7 @@ def decode_file(block_path: str, key_path: str, output_path: str) -> int:
         Size of the restored file in bytes.
     """
     key_str = open(key_path, "r").read().strip()
-    parts = key_str.split(":")
-    key_data = int(parts[0])
-    count = int(parts[1])
-    size = int(parts[2])
+    key_data, count, size = _parse_key(key_str)
 
     if size <= 16 or count == 0:
         block = open(block_path, "rb").read()
@@ -216,6 +195,54 @@ def decode_file(block_path: str, key_path: str, output_path: str) -> int:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+def _first_nz(data: bytes, size: int) -> int:
+    """Return index of first non-zero byte."""
+    nz = 0
+    while nz < size and data[nz] == 0:
+        nz += 1
+    return nz
+
+
+def _encode_main(data: bytes, size: int) -> tuple[bytes, str]:
+    """Encode a file using the standard head-extraction algorithm."""
+    nz = _first_nz(data, size)
+    head = data[nz : nz + _HEAD_LEN]
+    fb = head[0].bit_length()
+    head_int = int.from_bytes(head, "big")
+
+    total_bits = (size - nz - 1) * 8 + fb
+    count = total_bits - KEY_BITS
+
+    key_data = head_int >> fb
+    remainder = head_int & ((1 << fb) - 1)
+
+    block = bytes([remainder]) + data[nz + _HEAD_LEN :]
+    key = f"{key_data}:{count}:{size}"
+    return block, key
+
+
+def _salt_key(raw_key: str) -> str:
+    """Add a random salt to make the key unique."""
+    parts = raw_key.split(":")
+    key_data = int(parts[0])
+    salt = secrets.randbits(KEY_BITS)
+    salted = key_data ^ salt
+    return f"{salted}:{parts[1]}:{parts[2]}:{salt}"
+
+
+def _parse_key(key: str) -> tuple[int, int, int]:
+    """Parse key string, handling both salted and legacy formats."""
+    parts = key.split(":")
+    if len(parts) == 4:
+        salt = int(parts[3])
+        key_data = int(parts[0]) ^ salt
+    else:
+        key_data = int(parts[0])
+    count = int(parts[1])
+    size = int(parts[2])
+    return key_data, count, size
+
 
 def _encode_small(data: bytes, size: int) -> tuple[bytes, str]:
     """Encode a small file (≤16 bytes) using big-int."""

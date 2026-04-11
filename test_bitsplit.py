@@ -51,10 +51,10 @@ def test_all_ones():
 
 
 def test_key_format():
-    """Key should be data:count:size format."""
+    """Key should be salted_data:count:size:salt format."""
     block, key = encode(os.urandom(500))
     parts = key.split(":")
-    assert len(parts) == 3
+    assert len(parts) == 4
     assert all(p.isdigit() for p in parts)
     assert int(parts[2]) == 500
 
@@ -73,7 +73,7 @@ def test_wrong_key_fails():
 
     parts = key.split(":")
     fake_data = int(parts[0]) ^ 1  # flip one bit
-    fake_key = f"{fake_data}:{parts[1]}:{parts[2]}"
+    fake_key = f"{fake_data}:{parts[1]}:{parts[2]}:{parts[3]}"
 
     result = decode(block, fake_key)
     assert result != original
@@ -85,3 +85,28 @@ def test_api_types():
     assert isinstance(block, bytes)
     assert isinstance(key, str)
     assert isinstance(decode(block, key), bytes)
+
+
+def test_unique_keys():
+    """Encoding the same data twice should produce different keys."""
+    data = os.urandom(500)
+    _, key1 = encode(data)
+    _, key2 = encode(data)
+    assert key1 != key2
+    # But both should decode correctly
+    block, key1 = encode(data)
+    assert decode(block, key1) == data
+    block, key2 = encode(data)
+    assert decode(block, key2) == data
+
+
+def test_legacy_key_format():
+    """Old keys without salt should still decode."""
+    data = b"Hello, bitsplit!"
+    block, key = encode(data)
+    # Simulate legacy key by stripping salt and using raw key_data
+    parts = key.split(":")
+    salt = int(parts[3])
+    key_data = int(parts[0]) ^ salt
+    legacy_key = f"{key_data}:{parts[1]}:{parts[2]}"
+    assert decode(block, legacy_key) == data
