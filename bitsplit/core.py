@@ -1,7 +1,7 @@
 """Core encode/decode logic."""
 
+import hashlib
 import os
-import secrets
 import shutil
 import sys
 
@@ -34,7 +34,7 @@ def encode(data: bytes) -> tuple[bytes, str]:
     else:
         block, raw_key = _encode_main(data, size)
 
-    key = _salt_key(raw_key)
+    key = _mask_key(raw_key, block)
     return block, key
 
 
@@ -43,12 +43,13 @@ def decode(block: bytes, key: str) -> bytes:
 
     Args:
         block: Binary block (indices).
-        key: Key string in "data:count:size:salt" or legacy "data:count:size" format.
+        key: Key string in "data:count:size" format (masked with block hash)
+             or legacy "data:count:size:salt" format.
 
     Returns:
         Restored file content as bytes.
     """
-    key_data, count, size = _parse_key(key)
+    key_data, count, size = _parse_key(key, block)
 
     if size <= 16 or count == 0:
         return _decode_small(key_data, count, size, block)
@@ -94,7 +95,7 @@ def encode_file(input_path: str, block_path: str, key_path: str) -> int:
         data = open(input_path, "rb").read()
         block, raw_key = _encode_small(data, size)
         _write(block_path, block)
-        _write_text(key_path, _salt_key(raw_key))
+        _write_text(key_path, _mask_key(raw_key, block))
         return len(block)
 
     with open(input_path, "rb") as fin:
@@ -112,7 +113,7 @@ def encode_file(input_path: str, block_path: str, key_path: str) -> int:
             data = fin.read()
             block, raw_key = _encode_bigint(data, size)
             _write(block_path, block)
-            _write_text(key_path, _salt_key(raw_key))
+            _write_text(key_path, _mask_key(raw_key, block))
             return len(block)
 
         # Read head: the first non-zero byte (already read as `b`) + 16 more
@@ -136,7 +137,10 @@ def encode_file(input_path: str, block_path: str, key_path: str) -> int:
             block_size += size - nz - _HEAD_LEN
 
     raw_key = f"{key_data}:{count}:{size}"
-    _write_text(key_path, _salt_key(raw_key))
+    # Read block sample for hash-based masking
+    with open(block_path, "rb") as fb:
+        block_sample = fb.read(_HASH_SAMPLE)
+    _write_text(key_path, _mask_key(raw_key, block_sample))
     return block_size
 
 
@@ -147,7 +151,9 @@ def decode_file(block_path: str, key_path: str, output_path: str) -> int:
         Size of the restored file in bytes.
     """
     key_str = open(key_path, "r").read().strip()
-    key_data, count, size = _parse_key(key_str)
+    with open(block_path, "rb") as fb:
+        block_sample = fb.read(_HASH_SAMPLE)
+    key_data, count, size = _parse_key(key_str, block_sample)
 
     if size <= 16 or count == 0:
         block = open(block_path, "rb").read()
@@ -222,22 +228,42 @@ def _encode_main(data: bytes, size: int) -> tuple[bytes, str]:
     return block, key
 
 
-def _salt_key(raw_key: str) -> str:
-    """Add a random salt to make the key unique."""
+_HASH_SAMPLE = 4096  # bytes to hash for key derivation
+
+
+def _block_hash(block: bytes) -> int:
+    """Derive a 128-bit hash from the first bytes of the block."""
+    sample = block[:_HASH_SAMPLE] if len(block) > _HASH_SAMPLE else block
+    digest = hashlib.sha256(sample).digest()[:16]
+    return int.from_bytes(digest, "big")
+
+
+def _mask_key(raw_key: str, block: bytes) -> str:
+    """XOR key_data with block hash to make the key unique.
+
+    Skips masking for empty/tiny blocks (small files, all-zeros, etc.)
+    where the block has no meaningful differentiating content.
+    """
     parts = raw_key.split(":")
+    if len(block) < 2:
+        return raw_key
     key_data = int(parts[0])
-    salt = secrets.randbits(KEY_BITS)
-    salted = key_data ^ salt
-    return f"{salted}:{parts[1]}:{parts[2]}:{salt}"
+    masked = key_data ^ _block_hash(block)
+    return f"{masked}:{parts[1]}:{parts[2]}"
 
 
-def _parse_key(key: str) -> tuple[int, int, int]:
-    """Parse key string, handling both salted and legacy formats."""
+def _parse_key(key: str, block: bytes = None) -> tuple[int, int, int]:
+    """Parse key string, unmasking with block hash if available."""
     parts = key.split(":")
     if len(parts) == 4:
+        # Legacy salted format: data:count:size:salt
         salt = int(parts[3])
         key_data = int(parts[0]) ^ salt
+    elif block is not None and len(block) > 0:
+        # New format: data XORed with block hash
+        key_data = int(parts[0]) ^ _block_hash(block)
     else:
+        # Raw/legacy format without salt
         key_data = int(parts[0])
     count = int(parts[1])
     size = int(parts[2])
