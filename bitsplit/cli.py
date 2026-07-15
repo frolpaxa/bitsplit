@@ -10,7 +10,7 @@ from .core import decode_file, encode_file
 def main():
     parser = argparse.ArgumentParser(
         prog="bitsplit",
-        description="Split any file into a binary block and a 128-bit text key.",
+        description="Stop serving ready-to-download files.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

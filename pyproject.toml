@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bitsplit"
 version = "2.0.0"
-description = "Split any file into a keyless binary block and a 128-bit text key."
+description = "Stop serving ready-to-download files."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"

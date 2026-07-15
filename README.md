@@ -7,12 +7,14 @@
 </p>
 
 <p align="center">
-  <em>Split any file into a keyless binary block and a 128-bit text key.</em>
+  <em>Stop serving ready-to-download files.</em>
 </p>
 
 ---
 
-Any file becomes two objects: a binary block and a short text key. Without the key, the block is useless.
+Any file becomes two objects: a binary block and a short text key. The block is
+not a ready-to-download copy of the original; a client must obtain both parts
+and reconstruct the file before it can be used normally.
 
 ```
 photo.jpg  -->  data.bin + key.txt
@@ -73,21 +75,32 @@ open("restored.jpg", "wb").write(content)
 data (128-bit number)                  count   size (bytes)
 ```
 
-## Why it can't be restored without the key
+## What the split does
 
-The key holds 128 bits of data. Brute-forcing 2^128 variants (~3.4 x 10^38) is infeasible — it would take longer than the age of the universe.
+bitsplit removes the top 128 bits from the file's numeric representation. The
+matching key is required for exact reconstruction through the supported API.
+This disrupts direct downloads and forces a downloader to reproduce the client
+reconstruction flow.
+
+The block is not encrypted: it retains most of the source bytes and may reveal
+content or structure. The split is a delivery obstacle, not a confidentiality
+boundary.
 
 ## Use cases
 
-- **Split storage** — file on the cloud, key on your device. A breach of one side is useless without the other
-- **Two-channel transfer** — send the block via messenger, the key via SMS. Intercepting one channel reveals nothing
-- **Offline backups** — data on an external drive, key on paper in a safe
-- **Shared access control** — one person holds the key, another holds the block. Both are required to restore the file
-- **CI/CD secrets** — block committed to the repo, key stored in environment variables
-- **Geo-distribution** — block in one data center, key in another
+- **Public media delivery** — serve blocks instead of ready JPEG, MP4, or audio files
+- **Video reconstruction** — make downloaders collect ranges or chunks and rebuild the media container
+- **Anti-hotlinking** — a copied block URL does not point to the original ready-to-use file
+- **Scraping resistance** — generic downloaders must reproduce the site's reconstruction protocol
+- **Browser assembly** — restore content on demand in JavaScript or a Service Worker
+- **Controlled delivery flows** — combine blocks with sessions, short-lived URLs, or access checks
 
 > [!CAUTION]
-> **bitsplit is not encryption.** It does not use ciphers, rounds, or key derivation. It splits raw data into two parts — neither part is useful without the other. Think of it as tearing a document in half rather than locking it in a safe. The 128-bit key makes brute-force infeasible, but there is no authentication, no padding, and no protection against tampering. If you need a cryptographic standard (compliance, audits, signatures), use AES or ChaCha20.
+> **bitsplit is not encryption or DRM.** A determined downloader who can observe
+> the reconstruction flow can automate it. The goal is to stop serving a finished
+> file at one public URL and raise the effort required for casual downloading,
+> hotlinking, and generic scraping. Use established encryption when confidentiality
+> is required.
 
 ## Performance
 

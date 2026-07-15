@@ -45,4 +45,5 @@ The key returned by `encode()` is a colon-separated string:
 .. autodata:: bitsplit.core.KEY_BITS
 ```
 
-`KEY_BITS = 128` — the number of bits sliced off as the key. This matches AES-128 key space (2^128 variants).
+`KEY_BITS = 128` — the number of bits separated into the reconstruction key.
+This is a format parameter, not a cryptographic security level.

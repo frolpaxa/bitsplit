@@ -1,50 +1,40 @@
-# Security considerations
+# Delivery and security considerations
 
-## What bitsplit is
+## What bitsplit does
 
-bitsplit is a **file-splitting tool**. It separates a file into two parts — a small key and a large block — such that both are required to reconstruct the original.
+bitsplit changes how a file is delivered. Instead of exposing a ready-to-use
+JPEG, MP4, ZIP, or other file at one public URL, a service can expose a binary
+block and deliver the reconstruction data through its client flow.
 
-## What bitsplit is not
+This raises the effort required for direct downloading, hotlinking, and generic
+scraping. A downloader may need to discover endpoints, reproduce a session,
+collect chunks or byte ranges, restore them, and assemble the final file.
 
-bitsplit is **not encryption**. It does not use ciphers, random IVs, or key derivation functions.
+## What bitsplit does not do
 
-## Key strength
+bitsplit is not encryption, DRM, or an access-control system. The block contains
+most of the original bytes in unencrypted form. A determined downloader who can
+observe a legitimate browser can reproduce the reconstruction process.
 
-The key contains 128 bits of data extracted from the file. Brute-forcing 2^128 variants (~3.4 × 10^38) is computationally infeasible with current and foreseeable technology.
+Separating 128 bits does not establish 128-bit cryptographic security. Known
+headers, predictable formats, and partial-data analysis can reveal information
+without reconstructing the complete file.
 
-For reference:
+## Appropriate uses
 
-- 2^128 ≈ 3.4 × 10^38
-- All computers on Earth doing 10^18 operations/sec would need ~10^13 years
-- The universe is ~1.4 × 10^10 years old
+- Preventing a public URL from returning a finished media file
+- Making simple “save URL” workflows fail
+- Raising the cost of hotlinking and generic media scraping
+- Browser-side reconstruction with JavaScript or a Service Worker
+- Combining delivery with sessions, authorization, rate limits, and short-lived
+  URLs
 
-## Known properties
+## Inappropriate uses
 
-### Deterministic
+- Protecting secrets or personal data
+- Compliance or cryptographic confidentiality
+- Preventing an authorized viewer from copying content
+- Claiming that downloading or reconstruction is impossible
 
-The same file always produces the same key and block. There is no randomness in the process.
-
-### Block is not encrypted
-
-The block (`data.bin`) contains the lower bits of the file interpreted as a number. It is not ciphertext — it is a subset of the original data.
-
-### Format-aware attacks
-
-If an attacker knows the file format (e.g., JPEG starts with `FF D8 FF`), they know some of the top bits, reducing the unknown key space. For JPEG (4-byte known header), the key space reduces from 2^128 to ~2^96 — still infeasible to brute-force.
-
-## Recommendations
-
-- **Keep `key.txt` private.** Anyone with both the key and block can restore the file.
-- **Store key and block separately.** The whole point is that neither is useful alone.
-- **For sensitive data**, consider using bitsplit in combination with real encryption (e.g., AES-256 via `gpg` or `age`).
-
-## Comparison with encryption
-
-| Property           | bitsplit          | AES-256              |
-| ------------------ | ----------------- | -------------------- |
-| Key source         | Derived from file | Independent / random |
-| Deterministic      | Yes               | No (random IV)       |
-| Block looks random | No                | Yes                  |
-| Key size           | 128 bits          | 256 bits             |
-| Speed              | Instant           | Fast                 |
-| Dependencies       | None              | Crypto library       |
+Use an established encryption scheme such as AES or ChaCha20 when disclosure of
+the underlying bytes would matter.

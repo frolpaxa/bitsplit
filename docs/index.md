@@ -1,13 +1,19 @@
 # bitsplit
 
-**Split any file into a keyless binary block and a 128-bit text key.**
+**Stop serving ready-to-download files.**
 
 ```
 photo.jpg  -->  data.bin + key.txt
   1.05 MB       1.05 MB    102 B
 ```
 
-Without the key, the block is useless. The key is a single line of text — memorize it, write it down, or send it in a message.
+bitsplit turns a file into a binary block and a short text key. Public clients
+must obtain both parts and reconstruct the original instead of downloading a
+finished file from one URL.
+
+The block is not encrypted and may reveal most of the source bytes. bitsplit is
+designed to impede casual downloads, hotlinking, and generic scrapers—not to
+provide confidentiality.
 
 ## Quick start
 
