@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bitsplit — split a file into a binary block and a short key</title>
-<meta name="description" content="A fast, reversible file-splitting experiment. Exact reconstruction requires both parts. Not encryption and not suitable for protecting secrets.">
+<title>bitsplit — stop serving ready-to-download files</title>
+<meta name="description" content="Deliver public media as a block and reconstruction data instead of exposing a finished file at one URL. Anti-hotlinking and scraping friction, not DRM.">
 
 <!-- Open Graph -->
 <meta property="og:title" content="bitsplit">
-<meta property="og:description" content="A fast, reversible file-splitting experiment. Not encryption or confidential storage.">
+<meta property="og:description" content="Stop serving ready-to-download files. Add friction to direct downloads, hotlinking, and generic scraping.">
 <meta property="og:type" content="website">
 
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -684,11 +684,11 @@ footer {
   <div class="hero-inner">
     <div>
       <span class="eyebrow">v0.3 · pure python · zero deps</span>
-      <h1>Split any file<br>into <span class="accent">two parts</span>.</h1>
+      <h1>Stop serving<br><span class="accent">ready-to-download files</span>.</h1>
       <p class="lede">
-        bitsplit turns any file into a binary block and a short text key.
-        Both parts are required for exact reconstruction. The block is not encrypted
-        and may still reveal most of the original bytes.
+        Deliver public media as a binary block plus reconstruction data instead
+        of exposing a finished file at one URL. Browsers can rebuild it on demand;
+        downloaders must reproduce that flow.
       </p>
       <div class="hero-actions">
         <a href="#install" class="btn btn-primary">
@@ -720,7 +720,7 @@ footer {
 <!-- ============== STATS ============== -->
 <div class="stats">
   <div class="stats-inner">
-    <div class="stat"><div class="num">128 <span class="accent">bits</span></div><div class="lbl">separated into the key</div></div>
+    <div class="stat"><div class="num">0 <span class="accent">ready files</span></div><div class="lbl">at a direct public URL</div></div>
     <div class="stat"><div class="num">~20 <span class="accent">MB</span></div><div class="lbl">peak memory · any file size</div></div>
     <div class="stat"><div class="num">0<span class="accent">×</span></div><div class="lbl">dependencies</div></div>
     <div class="stat"><div class="num">1<span class="accent"> shift + 1 OR</span></div><div class="lbl">to recover the file</div></div>
@@ -855,40 +855,40 @@ Recovery:  number = (<span class="indigo">key_data</span> &lt;&lt; count) | <spa
   <div class="section-inner">
     <div class="section-head">
       <span class="eyebrow">use cases</span>
-      <h2>One file.<br>Two required parts.<br>Exact round-trip.</h2>
-      <p class="sub">Use bitsplit when you want a lightweight reversible split, not when you need confidentiality.</p>
+      <h2>Public to view.<br>Harder to scrape.<br>Exact in the browser.</h2>
+      <p class="sub">The content remains deliverable to legitimate clients, but a copied URL no longer returns the finished original.</p>
     </div>
 
     <div class="cases-grid">
       <div class="case">
-        <span class="ico">01 · incomplete artifact</span>
-        <h3>Block + key</h3>
-        <p>The block alone is not the original file and usually will not open directly in standard applications.</p>
+        <span class="ico">01 · public media</span>
+        <h3>No finished-file URL</h3>
+        <p>Serve a block instead of a ready JPEG, MP4, audio file, archive, or document.</p>
       </div>
       <div class="case">
-        <span class="ico">02 · exact recovery</span>
-        <h3>Both parts required</h3>
-        <p>The decoder needs the matching block and key to reproduce the original byte for byte.</p>
+        <span class="ico">02 · video delivery</span>
+        <h3>Collect, restore, assemble</h3>
+        <p>A downloader may need to fetch ranges or chunks, reconstruct them, and rebuild the media container.</p>
       </div>
       <div class="case">
-        <span class="ico">03 · deterministic</span>
-        <h3>Reproducible output</h3>
-        <p>The same input produces the same pair, which makes the transformation easy to test and reproduce.</p>
+        <span class="ico">03 · anti-hotlinking</span>
+        <h3>Copied URLs are incomplete</h3>
+        <p>Embedding a block URL elsewhere does not produce the original ready-to-use file.</p>
       </div>
       <div class="case">
-        <span class="ico">04 · experimentation</span>
-        <h3>Binary playground</h3>
-        <p>Explore integer representations, bit slicing, streaming I/O, and reversible file formats.</p>
+        <span class="ico">04 · scraping friction</span>
+        <h3>Break generic downloaders</h3>
+        <p>Simple “find URL and download” tools must be adapted to reproduce the site's reconstruction protocol.</p>
       </div>
       <div class="case">
-        <span class="ico">05 · lightweight</span>
-        <h3>Pure Python</h3>
-        <p>No external dependencies or compiled extensions are required by the original splitter.</p>
+        <span class="ico">05 · browser assembly</span>
+        <h3>Rebuild on demand</h3>
+        <p>Restore content in JavaScript or a Service Worker and support streamed byte-range delivery.</p>
       </div>
       <div class="case">
-        <span class="ico">06 · non-sensitive data</span>
-        <h3>Format disruption</h3>
-        <p>Useful when making a file incomplete is enough. Use real encryption for private or sensitive content.</p>
+        <span class="ico">06 · controlled flow</span>
+        <h3>Add application checks</h3>
+        <p>Combine reconstruction with sessions, authorization, rate limits, and short-lived endpoints.</p>
       </div>
     </div>
   </div>
@@ -898,9 +898,9 @@ Recovery:  number = (<span class="indigo">key_data</span> &lt;&lt; count) | <spa
 <section id="security" class="sec-section">
   <div class="section-inner">
     <div class="section-head">
-      <span class="eyebrow" style="color: var(--indigo-400);">limits · read before use</span>
-      <h2>It's a splitter.<br>Not protection.</h2>
-      <p class="sub">bitsplit makes a file incomplete. It does not make the remaining bytes confidential.</p>
+      <span class="eyebrow" style="color: var(--indigo-400);">honest limits · read before use</span>
+      <h2>Friction.<br>Not DRM.</h2>
+      <p class="sub">bitsplit changes the delivery workflow. It cannot prevent a determined viewer from copying public content.</p>
     </div>
 
     <div class="sec-grid">
@@ -920,9 +920,9 @@ Recovery:  number = (<span class="indigo">key_data</span> &lt;&lt; count) | <spa
         <p>There is no randomness in the process. Same input, same output. This is by design — and worth knowing before you use it.</p>
       </div>
       <div class="sec-card">
-        <div class="label" style="color: var(--slate-400);">appropriate use</div>
-        <h3>Assume the block is readable</h3>
-        <p>Use bitsplit for experiments and non-sensitive workflows. If disclosure would matter, encrypt the file with an established tool instead.</p>
+        <div class="label" style="color: var(--slate-400);">the actual promise</div>
+        <h3>Raise the cost of downloading</h3>
+        <p>Use bitsplit to deter casual downloads, hotlinking, and generic scraping. If disclosure would matter, encrypt the content and enforce access control.</p>
       </div>
     </div>
   </div>
