@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>bitsplit — split any file into a keyless block and a 128-bit key</title>
-<meta name="description" content="Split any file into a binary block and a 128-bit text key. Without the key, the block is useless. Pure Python, zero dependencies.">
+<title>bitsplit — split a file into a binary block and a short key</title>
+<meta name="description" content="A fast, reversible file-splitting experiment. Exact reconstruction requires both parts. Not encryption and not suitable for protecting secrets.">
 
 <!-- Open Graph -->
 <meta property="og:title" content="bitsplit">
-<meta property="og:description" content="Split any file into a keyless block and a 128-bit text key.">
+<meta property="og:description" content="A fast, reversible file-splitting experiment. Not encryption or confidential storage.">
 <meta property="og:type" content="website">
 
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -670,7 +670,7 @@ footer {
       <a href="#how">How it works</a>
       <a href="#install">Install</a>
       <a href="#performance">Performance</a>
-      <a href="#security">Security</a>
+      <a href="#security">Limits</a>
       <a href="https://github.com/frolpaxa/bitsplit" class="nav-cta">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>
         GitHub
@@ -684,10 +684,11 @@ footer {
   <div class="hero-inner">
     <div>
       <span class="eyebrow">v0.3 · pure python · zero deps</span>
-      <h1>Split any file<br>into <span class="accent">two halves</span>.</h1>
+      <h1>Split any file<br>into <span class="accent">two parts</span>.</h1>
       <p class="lede">
-        bitsplit turns any file into a binary block and a 128-bit text key.
-        Without the key, the block is useless. Without the block, the key is just a number.
+        bitsplit turns any file into a binary block and a short text key.
+        Both parts are required for exact reconstruction. The block is not encrypted
+        and may still reveal most of the original bytes.
       </p>
       <div class="hero-actions">
         <a href="#install" class="btn btn-primary">
@@ -705,7 +706,7 @@ footer {
     <div class="hero-glyph" aria-hidden="true">
       <div class="glyph-block b-key">
         <span>1</span><span>0</span><span>1</span>
-        <span class="glyph-label">key<span class="file">key.txt · 102 B</span></span>
+        <span class="glyph-label">key<span class="file">key.txt · ~60 B</span></span>
       </div>
       <div class="glyph-divider"></div>
       <div class="glyph-block b-data">
@@ -719,7 +720,7 @@ footer {
 <!-- ============== STATS ============== -->
 <div class="stats">
   <div class="stats-inner">
-    <div class="stat"><div class="num">2<span class="accent">^128</span></div><div class="lbl">key space</div></div>
+    <div class="stat"><div class="num">128 <span class="accent">bits</span></div><div class="lbl">separated into the key</div></div>
     <div class="stat"><div class="num">~20 <span class="accent">MB</span></div><div class="lbl">peak memory · any file size</div></div>
     <div class="stat"><div class="num">0<span class="accent">×</span></div><div class="lbl">dependencies</div></div>
     <div class="stat"><div class="num">1<span class="accent"> shift + 1 OR</span></div><div class="lbl">to recover the file</div></div>
@@ -751,7 +752,7 @@ footer {
       <div class="how-card">
         <div class="how-step">Step 03 · Save</div>
         <h3>Rest → block</h3>
-        <p>Everything below those 128 bits is written as raw bytes to <code style="font-family:var(--mono);font-size:0.9em;background:var(--slate-100);padding:1px 5px;border-radius:3px">data.bin</code>. Same total size as the original.</p>
+        <p>Everything below those 128 bits is written as raw bytes to <code style="font-family:var(--mono);font-size:0.9em;background:var(--slate-100);padding:1px 5px;border-radius:3px">data.bin</code>. The block remains close to the original file size.</p>
         <code class="codeline">indices = number &amp; ((<span class="num">1</span> &lt;&lt; count) - <span class="num">1</span>)</code>
       </div>
     </div>
@@ -819,8 +820,8 @@ Recovery:  number = (<span class="indigo">key_data</span> &lt;&lt; count) | <spa
   <div class="section-inner">
     <div class="section-head">
       <span class="eyebrow">performance</span>
-      <h2>Two bitwise ops.<br>No loops, no rounds.</h2>
-      <p class="sub">No ciphers means no per-byte processing. bitsplit is competitive with native crypto on small files and pulls ahead on multi-GB inputs.</p>
+      <h2>Small transform.<br>Streaming I/O.</h2>
+      <p class="sub">bitsplit performs a reversible split rather than encryption. The timings below describe speed only — cryptographic tools provide security properties that bitsplit does not.</p>
     </div>
 
     <div class="perf-grid">
@@ -854,40 +855,40 @@ Recovery:  number = (<span class="indigo">key_data</span> &lt;&lt; count) | <spa
   <div class="section-inner">
     <div class="section-head">
       <span class="eyebrow">use cases</span>
-      <h2>Two places.<br>Two channels.<br>Two people.</h2>
-      <p class="sub">A breach of one half is useless without the other. That's the whole product.</p>
+      <h2>One file.<br>Two required parts.<br>Exact round-trip.</h2>
+      <p class="sub">Use bitsplit when you want a lightweight reversible split, not when you need confidentiality.</p>
     </div>
 
     <div class="cases-grid">
       <div class="case">
-        <span class="ico">01 · split storage</span>
-        <h3>Cloud + device</h3>
-        <p>Block on the cloud, key on your laptop. Compromising the cloud reveals nothing.</p>
+        <span class="ico">01 · incomplete artifact</span>
+        <h3>Block + key</h3>
+        <p>The block alone is not the original file and usually will not open directly in standard applications.</p>
       </div>
       <div class="case">
-        <span class="ico">02 · two channels</span>
-        <h3>Messenger + SMS</h3>
-        <p>Send the block one way, the key another. Intercepting one channel is useless.</p>
+        <span class="ico">02 · exact recovery</span>
+        <h3>Both parts required</h3>
+        <p>The decoder needs the matching block and key to reproduce the original byte for byte.</p>
       </div>
       <div class="case">
-        <span class="ico">03 · offline</span>
-        <h3>Drive + paper</h3>
-        <p>Block on an external SSD. Key written on paper in a safe.</p>
+        <span class="ico">03 · deterministic</span>
+        <h3>Reproducible output</h3>
+        <p>The same input produces the same pair, which makes the transformation easy to test and reproduce.</p>
       </div>
       <div class="case">
-        <span class="ico">04 · ci/cd</span>
-        <h3>Repo + env vars</h3>
-        <p>Commit the block. Store the 102-byte key in environment variables.</p>
+        <span class="ico">04 · experimentation</span>
+        <h3>Binary playground</h3>
+        <p>Explore integer representations, bit slicing, streaming I/O, and reversible file formats.</p>
       </div>
       <div class="case">
-        <span class="ico">05 · two people</span>
-        <h3>You + co-signer</h3>
-        <p>One person holds the key, another holds the block. Both required to restore.</p>
+        <span class="ico">05 · lightweight</span>
+        <h3>Pure Python</h3>
+        <p>No external dependencies or compiled extensions are required by the original splitter.</p>
       </div>
       <div class="case">
-        <span class="ico">06 · geo-split</span>
-        <h3>Two data centers</h3>
-        <p>Block in one region. Key in another. Single-region failure protects both.</p>
+        <span class="ico">06 · non-sensitive data</span>
+        <h3>Format disruption</h3>
+        <p>Useful when making a file incomplete is enough. Use real encryption for private or sensitive content.</p>
       </div>
     </div>
   </div>
@@ -897,21 +898,21 @@ Recovery:  number = (<span class="indigo">key_data</span> &lt;&lt; count) | <spa
 <section id="security" class="sec-section">
   <div class="section-inner">
     <div class="section-head">
-      <span class="eyebrow" style="color: var(--indigo-400);">honest disclosure</span>
-      <h2>It's a splitter.<br>Not a cipher.</h2>
-      <p class="sub">bitsplit doesn't pretend to be encryption. Knowing what it is — and isn't — is part of the contract.</p>
+      <span class="eyebrow" style="color: var(--indigo-400);">limits · read before use</span>
+      <h2>It's a splitter.<br>Not protection.</h2>
+      <p class="sub">bitsplit makes a file incomplete. It does not make the remaining bytes confidential.</p>
     </div>
 
     <div class="sec-grid">
       <div class="sec-card warn">
         <div class="label">⚠ Caution</div>
         <h3>bitsplit is not encryption</h3>
-        <p>No ciphers. No rounds. No key derivation. If you need a cryptographic standard for compliance or audits, use <strong>AES</strong> or <strong>ChaCha20</strong> via <code>gpg</code> or <code>age</code>.</p>
+        <p>No ciphers. No rounds. No key derivation. The block contains most of the source bytes in unencrypted form. For confidential data, use <strong>AES</strong> or <strong>ChaCha20</strong> via <code>gpg</code> or <code>age</code>.</p>
       </div>
       <div class="sec-card info">
-        <div class="label">128-bit key space</div>
-        <h3>Brute-force is infeasible</h3>
-        <p>2<sup>128</sup> ≈ 3.4 × 10<sup>38</sup>. Every computer on Earth at 10<sup>18</sup> ops/sec would need ~10<sup>13</sup> years. The universe is 1.4 × 10<sup>10</sup> years old.</p>
+        <div class="label">No security claim</div>
+        <h3>128 missing bits ≠ 128-bit security</h3>
+        <p>Known file headers, predictable structure, and partial-data analysis can reduce the work dramatically. Do not treat the split as a brute-force barrier.</p>
       </div>
       <div class="sec-card">
         <div class="label" style="color: var(--slate-400);">deterministic</div>
@@ -919,9 +920,9 @@ Recovery:  number = (<span class="indigo">key_data</span> &lt;&lt; count) | <spa
         <p>There is no randomness in the process. Same input, same output. This is by design — and worth knowing before you use it.</p>
       </div>
       <div class="sec-card">
-        <div class="label" style="color: var(--slate-400);">recommendations</div>
-        <h3>Keep them apart</h3>
-        <p><strong>Keep <code>key.txt</code> private.</strong> Anyone with both halves can restore the file. <strong>Store key and block separately</strong> — that's the entire point.</p>
+        <div class="label" style="color: var(--slate-400);">appropriate use</div>
+        <h3>Assume the block is readable</h3>
+        <p>Use bitsplit for experiments and non-sensitive workflows. If disclosure would matter, encrypt the file with an established tool instead.</p>
       </div>
     </div>
   </div>
